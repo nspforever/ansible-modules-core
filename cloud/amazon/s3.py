@@ -257,7 +257,7 @@ def get_download_url(module, s3, bucket, obj, expiry, changed=True):
 
 def is_fakes3(s3_url):
     """ Return True if s3_url has scheme fakes3:// """
-    if s3_url is not None:
+    if s3_url:
         return urlparse.urlparse(s3_url).scheme == 'fakes3'
     else:
         return False
@@ -265,10 +265,20 @@ def is_fakes3(s3_url):
 def is_walrus(s3_url):
     """ Return True if it's Walrus endpoint, not S3
 
-    We assume anything other than *.amazonaws.com is Walrus"""
-    if s3_url is not None:
+    We assume anything other than *.amazonaws.com and *.amazonaws.com.cn is Walrus"""
+    if s3_url:
         o = urlparse.urlparse(s3_url)
-        return not o.hostname.endswith('amazonaws.com')
+        return not (o.hostname.endswith('amazonaws.com') or o.hostname.endswith('amazonaws.com.cn'))
+    else:
+        return False
+        
+def is_aws_china(s3_url):
+    def is_walrus(s3_url):
+    """ Return True if s3_url endswith amazonaws.com.cn
+
+    if s3_url:
+        o = urlparse.urlparse(s3_url)
+        return o.hostname.endswith('amazonaws.com.cn')
     else:
         return False
 
@@ -335,6 +345,15 @@ def main():
         try:
             walrus = urlparse.urlparse(s3_url).hostname
             s3 = boto.connect_walrus(walrus, aws_access_key, aws_secret_key)
+        except boto.exception.NoAuthHandlerFound, e:
+            module.fail_json(msg = str(e))
+    elif is_aws_china(s3_url):
+        try:
+            aws_cn_host = urlparse.urlparse(s3_url).hostname
+            s3 = boto.connect_s3(
+                aws_access_key,
+                aws_secret_key,
+                host=aws_cn_host)
         except boto.exception.NoAuthHandlerFound, e:
             module.fail_json(msg = str(e))
     else:
