@@ -273,9 +273,7 @@ def is_walrus(s3_url):
         return False
         
 def is_aws_china(s3_url):
-    def is_walrus(s3_url):
-    """ Return True if s3_url endswith amazonaws.com.cn
-
+    """ Return True if s3_url endswith amazonaws.com.cn"""
     if s3_url:
         o = urlparse.urlparse(s3_url)
         return o.hostname.endswith('amazonaws.com.cn')
